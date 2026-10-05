@@ -1,0 +1,10 @@
+{
+  "hooks": {
+    "postToolExecution": [
+      {
+        "pattern": "frontend/src/**",
+        "command": "npx prettier --write \"$FILE_PATH\""
+      }
+    ]
+  }
+}
