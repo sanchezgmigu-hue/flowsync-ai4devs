@@ -53,6 +53,7 @@ export function App() {
   const handleLogout = () => {
     clearToken();
     setCurrentUser(null);
+    setSessionError(null);
   };
 
   if (isCheckingSession) {
