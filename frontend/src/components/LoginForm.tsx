@@ -71,6 +71,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
             disabled={isLoading}
             required
             autoFocus
+            aria-invalid={!!errorMessage}
           />
         </div>
 
@@ -82,10 +83,12 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
             name="password"
             autoComplete="current-password"
             placeholder="••••••••"
+            maxLength={32}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             disabled={isLoading}
             required
+            aria-invalid={!!errorMessage}
           />
         </div>
 

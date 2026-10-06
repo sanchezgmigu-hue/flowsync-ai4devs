@@ -1,5 +1,11 @@
 import { useState, useEffect } from "react";
-import { getSavedToken, getProfile, clearToken, type User } from "./api/client";
+import {
+  getSavedToken,
+  getProfile,
+  clearToken,
+  ApiRequestError,
+  type User,
+} from "./api/client";
 import { LoginForm } from "./components/LoginForm";
 import { RegisterForm } from "./components/RegisterForm";
 import { Dashboard } from "./components/Dashboard";
@@ -8,42 +14,46 @@ import "./App.css";
 export function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
+  const [sessionError, setSessionError] = useState<string | null>(null);
   const [authView, setAuthView] = useState<"login" | "register">("login");
 
-  useEffect(() => {
-    let isMounted = true;
+  const verifySession = async () => {
+    setIsCheckingSession(true);
+    setSessionError(null);
 
-    const checkExistingSession = async () => {
-      const token = getSavedToken();
-      if (!token) {
-        if (isMounted) setIsCheckingSession(false);
-        return;
-      }
+    const token = getSavedToken();
+    if (!token) {
+      setIsCheckingSession(false);
+      return;
+    }
 
-      try {
-        const user = await getProfile();
-        if (isMounted) {
-          setCurrentUser(user);
-        }
-      } catch {
-        // Si el token guardado ya no es válido, lo limpiamos
+    try {
+      const user = await getProfile();
+      setCurrentUser(user);
+    } catch (err) {
+      if (err instanceof ApiRequestError && err.status === 401) {
+        // Solo eliminamos el token si el backend rechaza explícitamente la autenticación
         clearToken();
-        if (isMounted) {
-          setCurrentUser(null);
-        }
-      } finally {
-        if (isMounted) {
-          setIsCheckingSession(false);
-        }
+        setCurrentUser(null);
+      } else {
+        // Error de red temporal o servidor reiniciándose: no borramos el token
+        setSessionError(
+          "No se pudo conectar con el servidor para verificar tu sesión. Comprueba que el backend esté activo.",
+        );
       }
-    };
+    } finally {
+      setIsCheckingSession(false);
+    }
+  };
 
-    checkExistingSession();
-
-    return () => {
-      isMounted = false;
-    };
+  useEffect(() => {
+    verifySession();
   }, []);
+
+  const handleLogout = () => {
+    clearToken();
+    setCurrentUser(null);
+  };
 
   if (isCheckingSession) {
     return (
@@ -54,13 +64,42 @@ export function App() {
     );
   }
 
-  if (currentUser) {
+  if (sessionError) {
     return (
-      <Dashboard
-        initialUser={currentUser}
-        onLogout={() => setCurrentUser(null)}
-      />
+      <div className="auth-layout">
+        <div className="auth-container">
+          <div className="auth-card" style={{ textAlign: "center" }}>
+            <div className="auth-header">
+              <div className="auth-logo-badge">FS</div>
+              <h2>Problema de conexión</h2>
+              <p>{sessionError}</p>
+            </div>
+            <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
+              <button
+                type="button"
+                className="btn btn-primary"
+                style={{ flex: 1 }}
+                onClick={verifySession}
+              >
+                Reintentar
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                style={{ flex: 1 }}
+                onClick={handleLogout}
+              >
+                Iniciar sesión de nuevo
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     );
+  }
+
+  if (currentUser) {
+    return <Dashboard initialUser={currentUser} onLogout={handleLogout} />;
   }
 
   return (
