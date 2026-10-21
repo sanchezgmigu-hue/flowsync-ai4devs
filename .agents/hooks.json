@@ -1,0 +1,26 @@
+{
+  "prettier-format-frontend": {
+    "PostToolUse": [
+      {
+        "matcher": "replace_file_content",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx prettier --write \"$FILE_PATH\"",
+            "pattern": "frontend/src/**"
+          }
+        ]
+      },
+      {
+        "matcher": "write_to_file",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx prettier --write \"$FILE_PATH\"",
+            "pattern": "frontend/src/**"
+          }
+        ]
+      }
+    ]
+  }
+}
